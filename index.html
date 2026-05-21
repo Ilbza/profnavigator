@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ПрофНавигатор от Умскул Репетиторы - профориентация для школьников</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Unbounded:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a" aria-hidden="true"></div>
+    <div class="bg-shape bg-shape-b" aria-hidden="true"></div>
+
+    <header class="hero">
+      <p class="hero-kicker">Профориентация для школьников в России</p>
+      <h1>ПрофНавигатор от Умскул Репетиторы</h1>
+      <p class="hero-text">
+        Введите баллы по предметам, пройдите короткий тест интересов и получите подборку направлений и вузов,
+        куда можно поступить.
+      </p>
+    </header>
+
+    <main class="container">
+      <section class="panel" id="scores-panel">
+        <h2>1. Уровень знаний по предметам (0-100)</h2>
+        <p class="panel-hint">Заполните честно: это поможет подобрать более реалистичные варианты поступления.</p>
+        <form id="assessment-form" novalidate>
+          <div class="subject-grid">
+            <label>Русский язык <input type="number" min="0" max="100" value="70" id="russian" required /></label>
+            <label>Математика <input type="number" min="0" max="100" value="70" id="math" required /></label>
+            <label>Информатика <input type="number" min="0" max="100" value="65" id="informatics" required /></label>
+            <label>Физика <input type="number" min="0" max="100" value="60" id="physics" required /></label>
+            <label>Химия <input type="number" min="0" max="100" value="60" id="chemistry" required /></label>
+            <label>Биология <input type="number" min="0" max="100" value="60" id="biology" required /></label>
+            <label>Обществознание <input type="number" min="0" max="100" value="65" id="social" required /></label>
+            <label>История <input type="number" min="0" max="100" value="60" id="history" required /></label>
+            <label>Литература <input type="number" min="0" max="100" value="60" id="literature" required /></label>
+            <label>Английский язык <input type="number" min="0" max="100" value="65" id="english" required /></label>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="interests-panel">
+        <h2>2. Тест интересов</h2>
+        <p class="panel-hint">Оцените каждое утверждение по шкале от 1 (совсем не интересно) до 5 (очень интересно).</p>
+
+        <div class="interest-list">
+          <label>
+            Мне нравятся компьютеры, программирование и анализ данных
+            <input type="range" min="1" max="5" value="3" data-interest-key="tech" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Хочу проектировать механизмы, здания или технические системы
+            <input type="range" min="1" max="5" value="3" data-interest-key="engineering" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Интересно помогать людям в вопросах здоровья и медицины
+            <input type="range" min="1" max="5" value="3" data-interest-key="health" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Нравится экономика, бизнес и управление проектами
+            <input type="range" min="1" max="5" value="3" data-interest-key="economics" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Мне интересны право, законы, государственная служба
+            <input type="range" min="1" max="5" value="3" data-interest-key="law" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Люблю общаться, изучать общество и международные отношения
+            <input type="range" min="1" max="5" value="3" data-interest-key="communication" />
+            <span class="range-value">3</span>
+          </label>
+
+          <label>
+            Нравятся дизайн, визуальное творчество и креативные задачи
+            <input type="range" min="1" max="5" value="3" data-interest-key="creative" />
+            <span class="range-value">3</span>
+          </label>
+        </div>
+
+        <div class="filters">
+          <label>
+            Регион
+            <select id="region-filter">
+              <option value="all">Все регионы</option>
+              <option value="Москва">Москва</option>
+              <option value="Санкт-Петербург">Санкт-Петербург</option>
+            </select>
+          </label>
+          <label>
+            Формат
+            <select id="budget-filter">
+              <option value="all">Бюджет и платно</option>
+              <option value="budget">Только бюджет</option>
+              <option value="paid">Только платно</option>
+            </select>
+          </label>
+        </div>
+
+        <button id="pick-btn" type="button" class="btn btn-primary">Подобрать варианты поступления</button>
+      </section>
+
+      <section class="panel hidden" id="results-panel">
+        <h2>3. Результаты подбора</h2>
+        <p id="results-summary" class="panel-hint"></p>
+        <p id="db-meta" class="panel-hint"></p>
+        <div id="results-list" class="results-list"></div>
+        <div id="sources-box" class="sources-box"></div>
+      </section>
+
+      <section class="panel" id="application-panel">
+        <h2>4. Заявка на консультацию</h2>
+        <p class="panel-hint">
+          Заполните форму, чтобы скачать PDF с рекомендациями и данными для дальнейшего обсуждения.
+        </p>
+        <form id="application-form" novalidate>
+          <div class="application-grid">
+            <label>ФИО ребенка * <input type="text" id="childName" required /></label>
+            <label>Возраст * <input type="number" id="childAge" min="10" max="18" required /></label>
+            <label>Город * <input type="text" id="city" required /></label>
+            <label>
+              Email родителя *
+              <input
+                type="text"
+                id="parentEmail"
+                required
+                pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+                title="Введите email латиницей в формате name@example.com"
+              />
+            </label>
+            <label>
+              Телефон родителя *
+              <input
+                type="tel"
+                id="parentPhone"
+                required
+                inputmode="numeric"
+                maxlength="11"
+                pattern="^[0-9]{11}$"
+                title="Введите ровно 11 цифр, без пробелов и символов"
+              />
+            </label>
+            <label class="full-width">
+              Комментарий
+              <textarea id="comment" rows="3" placeholder="Например: рассматриваем вузы Москвы и Санкт-Петербурга"></textarea>
+            </label>
+          </div>
+
+          <label class="consent">
+            <input type="checkbox" id="consent" required />
+            Я согласен(а) на обработку персональных данных для подготовки консультации
+          </label>
+
+          <button id="download-btn" type="button" class="btn btn-secondary" disabled>Скачать PDF-заявку</button>
+          <p id="download-hint" class="download-hint">Сначала заполните заявку и получите подбор вариантов.</p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Важно: результаты носят ознакомительный характер. Для финального выбора направления и вуза
+        рекомендуется консультация со специалистом и проверка актуальных правил приема.
+      </p>
+    </footer>
+
+    <script src="data/programs-db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
