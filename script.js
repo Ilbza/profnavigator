@@ -349,11 +349,6 @@ function updateDownloadState() {
 }
 
 async function createPdfReport(applicant, scores, interests, recommendations) {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("Не удалось загрузить модуль PDF. Обновите страницу и попробуйте снова.");
-    return;
-  }
-
   const now = new Date();
   const topInterests = Object.entries(interests)
     .sort((a, b) => b[1] - a[1])
@@ -361,81 +356,75 @@ async function createPdfReport(applicant, scores, interests, recommendations) {
     .map(([key, value]) => `${interestLabels[key]} (${value}/5)`)
     .join(", ");
 
-  try {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
-    const left = 40;
-    const top = 50;
-    const line = 18;
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    let y = top;
+  const printableHtml = `
+    <!doctype html>
+    <html lang="ru">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ПрофНавигатор от Умскул Репетиторы - отчет</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #1f2533; margin: 24px; line-height: 1.45; }
+          h1 { font-size: 24px; margin: 0 0 8px; }
+          h2 { font-size: 18px; margin: 18px 0 8px; }
+          p { margin: 0 0 6px; }
+          .card { border: 1px solid #d8dfef; border-radius: 10px; padding: 10px; margin: 0 0 8px; }
+          @page { size: A4; margin: 16mm; }
+        </style>
+      </head>
+      <body>
+        <h1>ПрофНавигатор от Умскул Репетиторы: персональный отчет</h1>
+        <p><strong>Дата:</strong> ${now.toLocaleDateString("ru-RU")}</p>
 
-    const addText = (text, size = 12, bold = false) => {
-      pdf.setFont("helvetica", bold ? "bold" : "normal");
-      pdf.setFontSize(size);
-      const lines = pdf.splitTextToSize(text, 510);
-      for (const row of lines) {
-        if (y > pageHeight - 40) {
-          pdf.addPage();
-          y = top;
-        }
-        pdf.text(row, left, y);
-        y += line;
-      }
-    };
+        <h2>Данные заявки</h2>
+        <p><strong>ФИО ребенка:</strong> ${escapeHtml(applicant.childName)}</p>
+        <p><strong>Возраст:</strong> ${escapeHtml(applicant.childAge)}</p>
+        <p><strong>Город:</strong> ${escapeHtml(applicant.city)}</p>
+        <p><strong>Email родителя:</strong> ${escapeHtml(applicant.parentEmail)}</p>
+        <p><strong>Телефон родителя:</strong> ${escapeHtml(applicant.parentPhone)}</p>
 
-    addText("ProfNavigator by Umskul Repetitory - personal report", 16, true);
-    y += 4;
-    addText(`Date: ${now.toLocaleDateString("ru-RU")}`);
-    y += 8;
+        <h2>Интересы</h2>
+        <p><strong>Топ-3:</strong> ${escapeHtml(topInterests)}</p>
 
-    addText("Application data", 13, true);
-    addText(`Child name: ${applicant.childName}`);
-    addText(`Age: ${applicant.childAge}`);
-    addText(`City: ${applicant.city}`);
-    addText(`Parent email: ${applicant.parentEmail}`);
-    addText(`Parent phone: ${applicant.parentPhone}`);
-    y += 6;
+        <h2>Баллы по предметам</h2>
+        <p>${Object.entries(scores)
+          .map(([key, value]) => `${subjectLabels[key]}: ${value}`)
+          .join(" | ")}</p>
 
-    addText("Interests", 13, true);
-    addText(`Top-3: ${topInterests}`);
-    y += 6;
+        <h2>Рекомендованные направления</h2>
+        ${recommendations
+          .map(
+            (item, index) => `
+              <div class="card">
+                <p><strong>${index + 1}. ${escapeHtml(item.direction)}</strong> - ${escapeHtml(item.university)}, ${escapeHtml(item.city)}</p>
+                <p><strong>Профильные предметы:</strong> ${item.required.map((subjectKey) => subjectLabels[subjectKey]).join(", ")}</p>
+                <p><strong>Средний профильный балл:</strong> ${item.requiredAverage.toFixed(1)} из 100</p>
+                <p><strong>Вероятность:</strong> ${escapeHtml(item.chanceLabel)}</p>
+                <p><strong>Источник:</strong> ${escapeHtml(item.sourceName)}</p>
+                <p><strong>Рекомендация:</strong> ${escapeHtml(item.advice)}</p>
+              </div>
+            `
+          )
+          .join("")}
 
-    addText("Scores by subjects", 13, true);
-    addText(
-      Object.entries(scores)
-        .map(([key, value]) => `${subjectLabels[key]}: ${value}`)
-        .join(" | ")
-    );
-    y += 6;
+        <h2>Комментарий семьи</h2>
+        <p>${escapeHtml(applicant.comment || "-")}</p>
+      </body>
+    </html>
+  `;
 
-    addText("Recommended programs", 13, true);
-    recommendations.forEach((item, index) => {
-      addText(`${index + 1}. ${item.direction} - ${item.university}, ${item.city}`, 12, true);
-      addText(`Subjects: ${item.required.map((subjectKey) => subjectLabels[subjectKey]).join(", ")}`);
-      addText(`Average: ${item.requiredAverage.toFixed(1)} | Chance: ${item.chanceLabel}`);
-      addText(`Source: ${item.sourceName}`);
-      addText(`Advice: ${item.advice}`);
-      y += 4;
-    });
-
-    addText("Family comment", 13, true);
-    addText(applicant.comment || "-");
-
-    const safeName = (applicant.childName || "anketa").replace(/[^a-zA-Zа-яА-Я0-9-_ ]/g, "").trim();
-    const reportDate = now.toISOString().slice(0, 10);
-    const filename = `profil-${safeName || "anketa"}-${reportDate}.pdf`;
-
-    try {
-      pdf.save(filename);
-    } catch {
-      const blobUrl = pdf.output("bloburl");
-      window.location.href = blobUrl;
-    }
-  } catch (error) {
-    console.error(error);
-    alert("Не удалось выгрузить PDF в этом окне. Попробуйте открыть сайт в Safari/Chrome или перезагрузить страницу.");
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Браузер заблокировал окно печати. Разрешите всплывающие окна для сайта.");
+    return;
   }
+  printWindow.document.open();
+  printWindow.document.write(printableHtml);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 350);
 }
 
 function average(values) {
